@@ -53,12 +53,12 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/crypto v0.8.0
 	golang.org/x/exp v0.0.0-20220602145555-4a0574d9293f
-	golang.org/x/oauth2 v0.7.0
-	golang.org/x/sync v0.1.0
+	golang.org/x/oauth2 v0.8.0
+	golang.org/x/sync v0.2.0
 	golang.org/x/time v0.3.0
-	google.golang.org/api v0.118.0
-	google.golang.org/genproto v0.0.0-20230403163135-c38d8f061ccd
-	google.golang.org/grpc v1.54.0
+	google.golang.org/api v0.124.0
+	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
+	google.golang.org/grpc v1.55.0
 	gopkg.in/go-playground/webhooks.v5 v5.17.0
 	gopkg.in/jcmturner/gokrb5.v5 v5.3.0
 	k8s.io/api v0.24.3
@@ -74,7 +74,7 @@ require (
 	upper.io/db.v3 v3.8.0+incompatible
 )
 
-require github.com/google/s2a-go v0.1.0 // indirect
+require github.com/google/s2a-go v0.1.4 // indirect
 
 require (
 	cloud.google.com/go v0.110.0 // indirect
@@ -230,9 +230,9 @@ require (
 	github.com/yudai/golcs v0.0.0-20170316035057-ecda9a501e82 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
-	golang.org/x/net v0.9.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
-	golang.org/x/term v0.7.0
+	golang.org/x/net v0.10.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
+	golang.org/x/term v0.8.0
 	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
