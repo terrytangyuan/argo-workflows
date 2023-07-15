@@ -3,6 +3,7 @@ module github.com/argoproj/argo-workflows/v3
 go 1.20
 
 require (
+	cloud.google.com/go/cloudsqlconn v1.4.0
 	cloud.google.com/go/storage v1.31.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.3.0
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.0.0

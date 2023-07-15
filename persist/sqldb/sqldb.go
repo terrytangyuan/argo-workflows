@@ -3,13 +3,16 @@ package sqldb
 import (
 	"context"
 	"fmt"
-	"time"
-
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/stdlib"
 	"k8s.io/client-go/kubernetes"
+	"net"
+	"time"
 	"upper.io/db.v3/lib/sqlbuilder"
 	"upper.io/db.v3/mysql"
 	"upper.io/db.v3/postgresql"
 
+	"cloud.google.com/go/cloudsqlconn"
 	"github.com/argoproj/argo-workflows/v3/config"
 	"github.com/argoproj/argo-workflows/v3/errors"
 	"github.com/argoproj/argo-workflows/v3/util"
@@ -55,6 +58,34 @@ func CreatePostGresDBSession(kubectlConfig kubernetes.Interface, namespace strin
 	if err != nil {
 		return nil, err
 	}
+
+	// Ref: https://cloud.google.com/sql/docs/postgres/iam-logins#log-in-with-automatic
+	d, err := cloudsqlconn.NewDialer(context.Background(), cloudsqlconn.WithIAMAuthN())
+	if err != nil {
+		return nil, fmt.Errorf("cloudsqlconn.NewDialer: %w", err)
+	}
+	var opts []cloudsqlconn.DialOption
+
+	dsn := fmt.Sprintf("user=%s database=%s", "service-account-name@project-id.iam", "dbname")
+	instanceConnectionName := "project:region:instance"
+	config, err := pgx.ParseConfig(dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	config.DialFunc = func(ctx context.Context, network, instance string) (net.Conn, error) {
+		return d.Dial(ctx, instanceConnectionName, opts...)
+	}
+	dbURI := stdlib.RegisterConnConfig(config)
+	connURL, err := postgresql.ParseURL(dbURI)
+	if err != nil {
+		return nil, fmt.Errorf("postgresql.ParseURL: %w", err)
+	}
+	session, err := postgresql.Open(connURL)
+	if err != nil {
+		return nil, fmt.Errorf("postgresql.Open: %w", err)
+	}
+	return session, nil
 
 	settings := postgresql.ConnectionURL{
 		User:     string(userNameByte),
