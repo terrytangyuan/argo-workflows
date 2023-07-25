@@ -85,7 +85,7 @@ func CreatePostGresDBSession(kubectlConfig kubernetes.Interface, namespace strin
 	if err != nil {
 		return nil, fmt.Errorf("postgresql.Open: %w", err)
 	}
-	return session, nil
+	//return session, nil
 
 	settings := postgresql.ConnectionURL{
 		User:     string(userNameByte),
@@ -103,7 +103,7 @@ func CreatePostGresDBSession(kubectlConfig kubernetes.Interface, namespace strin
 		}
 	}
 
-	session, err := postgresql.Open(settings)
+	//session, err := postgresql.Open(settings)
 	if err != nil {
 		return nil, err
 	}

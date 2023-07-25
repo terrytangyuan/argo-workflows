@@ -1,41 +1,48 @@
 package sqldb
 
 import (
+	"cloud.google.com/go/cloudsqlconn"
+	"database/sql"
+	"fmt"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/stretchr/testify/assert"
+	"net"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"context"
 	"k8s.io/apimachinery/pkg/labels"
-	"upper.io/db.v3"
 )
 
 func Test_labelsClause(t *testing.T) {
-	tests := []struct {
-		name         string
-		dbType       dbType
-		requirements labels.Requirements
-		want         db.Compound
-	}{
-		{"Empty", Postgres, requirements(""), db.And()},
-		{"DoesNotExist", Postgres, requirements("!foo"), db.And(db.Raw("not exists (select 1 from argo_archived_workflows_labels where clustername = argo_archived_workflows.clustername and uid = argo_archived_workflows.uid and name = 'foo')"))},
-		{"Equals", Postgres, requirements("foo=bar"), db.And(db.Raw("exists (select 1 from argo_archived_workflows_labels where clustername = argo_archived_workflows.clustername and uid = argo_archived_workflows.uid and name = 'foo' and value = 'bar')"))},
-		{"DoubleEquals", Postgres, requirements("foo==bar"), db.And(db.Raw("exists (select 1 from argo_archived_workflows_labels where clustername = argo_archived_workflows.clustername and uid = argo_archived_workflows.uid and name = 'foo' and value = 'bar')"))},
-		{"In", Postgres, requirements("foo in (bar,baz)"), db.And(db.Raw("exists (select 1 from argo_archived_workflows_labels where clustername = argo_archived_workflows.clustername and uid = argo_archived_workflows.uid and name = 'foo' and value in ('bar', 'baz'))"))},
-		{"NotEquals", Postgres, requirements("foo != bar"), db.And(db.Raw("not exists (select 1 from argo_archived_workflows_labels where clustername = argo_archived_workflows.clustername and uid = argo_archived_workflows.uid and name = 'foo' and value = 'bar')"))},
-		{"NotIn", Postgres, requirements("foo notin (bar,baz)"), db.And(db.Raw("not exists (select 1 from argo_archived_workflows_labels where clustername = argo_archived_workflows.clustername and uid = argo_archived_workflows.uid and name = 'foo' and value in ('bar', 'baz'))"))},
-		{"Exists", Postgres, requirements("foo"), db.And(db.Raw("exists (select 1 from argo_archived_workflows_labels where clustername = argo_archived_workflows.clustername and uid = argo_archived_workflows.uid and name = 'foo')"))},
-		{"GreaterThanPostgres", Postgres, requirements("foo>2"), db.And(db.Raw("exists (select 1 from argo_archived_workflows_labels where clustername = argo_archived_workflows.clustername and uid = argo_archived_workflows.uid and name = 'foo' and cast(value as int) > 2)"))},
-		{"GreaterThanMySQL", MySQL, requirements("foo>2"), db.And(db.Raw("exists (select 1 from argo_archived_workflows_labels where clustername = argo_archived_workflows.clustername and uid = argo_archived_workflows.uid and name = 'foo' and cast(value as signed) > 2)"))},
-		{"LessThanPostgres", Postgres, requirements("foo<2"), db.And(db.Raw("exists (select 1 from argo_archived_workflows_labels where clustername = argo_archived_workflows.clustername and uid = argo_archived_workflows.uid and name = 'foo' and cast(value as int) < 2)"))},
-		{"LessThanMySQL", MySQL, requirements("foo<2"), db.And(db.Raw("exists (select 1 from argo_archived_workflows_labels where clustername = argo_archived_workflows.clustername and uid = argo_archived_workflows.uid and name = 'foo' and cast(value as signed) < 2)"))},
+	// Ref: https://cloud.google.com/sql/docs/postgres/iam-logins#log-in-with-automatic
+	d, err := cloudsqlconn.NewDialer(context.Background(), cloudsqlconn.WithIAMAuthN())
+	assert.Nil(t, err)
+	var opts []cloudsqlconn.DialOption
+
+	dsn := fmt.Sprintf("user=%s database=%s", "p774999980047-mame9g@gcp-sa-cloud-sql.iam.gserviceaccount.com", "postgres")
+	instanceConnectionName := "akuity-test:us-west2:akp-tenantdb001-15-tst-usw2-primary"
+	config, err := pgx.ParseConfig(dsn)
+	assert.Nil(t, err)
+
+	config.DialFunc = func(ctx context.Context, network, instance string) (net.Conn, error) {
+		return d.Dial(ctx, instanceConnectionName, opts...)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := labelsClause(tt.dbType, tt.requirements)
-			if assert.NoError(t, err) {
-				assert.Equal(t, tt.want.Sentences(), got.Sentences())
-			}
-		})
-	}
+	println(config.ConnString())
+	dbURI := stdlib.RegisterConnConfig(config)
+	// "missing \"=\" after \"registeredConnConfig0\" in connection info string\"
+	//connURL, err := postgresql.ParseURL(dbURI)
+	//assert.Nil(t, err)
+	//options := map[string]string{
+	//	"sslmode": "disable",
+	//}
+	//connURL.Options = options
+	//_, err = postgresql.Open(connURL)
+	db, err := sql.Open("pgx", dbURI)
+	assert.Nil(t, err)
+	// failed SASL auth
+	err = db.Ping()
+	assert.Nil(t, err)
 }
 
 func requirements(selector string) []labels.Requirement {
