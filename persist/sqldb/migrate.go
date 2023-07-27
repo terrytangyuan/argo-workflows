@@ -269,22 +269,24 @@ func (m migrate) Exec(ctx context.Context) (err error) {
 }
 
 func (m migrate) applyChange(ctx context.Context, changeSchemaVersion int, c change) error {
-	tx := m.session.WithContext(ctx)
-	defer func() { _ = tx.Rollback() }()
-	rs, err := tx.SQL().Exec("update schema_history set schema_version = ? where schema_version = ?", changeSchemaVersion, changeSchemaVersion-1)
-	if err != nil {
-		return err
-	}
-	rowsAffected, err := rs.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 1 {
-		log.WithFields(log.Fields{"changeSchemaVersion": changeSchemaVersion, "change": c}).Info("applying database change")
-		err := c.apply(m.session)
+	// https://upper.io/blog/2020/08/29/whats-new-on-upper-v4/#transactions-enclosed-by-functions
+	err := m.session.Tx(func(tx db.Session) error {
+		rs, err := tx.SQL().Exec("update schema_history set schema_version = ? where schema_version = ?", changeSchemaVersion, changeSchemaVersion-1)
 		if err != nil {
 			return err
 		}
-	}
-	return tx.SQL().Commit()
+		rowsAffected, err := rs.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if rowsAffected == 1 {
+			log.WithFields(log.Fields{"changeSchemaVersion": changeSchemaVersion, "change": c}).Info("applying database change")
+			err := c.apply(m.session)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return err
 }
