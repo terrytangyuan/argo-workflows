@@ -1,4 +1,9 @@
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: akp-tndb001-15-tst-usw2-app
+---
+apiVersion: v1
 kind: Pod
 metadata:
   name: test-db-pod
@@ -6,6 +11,6 @@ spec:
   serviceAccountName: akp-tndb001-15-tst-usw2-app
   containers:
     - name: test-db
-      image: quay.io/terrytangyuan/test:1
+      image: quay.io/terrytangyuan/test:2
       command: [ "/bin/bash", "-c", "--" ]
       args: [ "while true; do sleep 30; done;" ]

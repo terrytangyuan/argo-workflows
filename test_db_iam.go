@@ -17,7 +17,7 @@ func main() {
 		log.Fatal("NewDialer: ", err)
 	}
 	var opts []cloudsqlconn.DialOption
-	dsn := "user=akp-tndb001-15-tst-usw2-app@akuity-test.iam database=testdb sslmode=disable"
+	dsn := "host=34.94.245.198 user=akp-tndb001-15-tst-usw2-app@akuity-test.iam database=testdb sslmode=disable"
 	instanceConnectionName := "akuity-test:us-west2:akp-tenantdb001-15-tst-usw2"
 	config, err := pgx.ParseConfig(dsn)
 	if err != nil {
